@@ -25,14 +25,14 @@ mu=np.zeros(48)
 #create numpy array for variance
 sigma=np.zeros((48, 48))
 #cycle through HH - (hour hour) to fill these
-for hh in range(0,47,1):
-    
+for hh in range(0,48,1):
+    #locates a subset of data for weekdays in march 
     fri6pm=df_lcl.loc[(df_lcl['MonthOfYear'] == 3) & (df_lcl['DayOfWeek'] <= 5) & (df_lcl['HH'] == hh)]
     
     #uses predefined mean function from numpy
     mu[hh]=np.mean([fri6pm[col].mean() for col in fri6pm.columns], axis=0)
     
-    #uses predefined co(?)variance function from numpy
+    #uses predefined variance function from numpy
     sigma[hh,hh]=np.var([fri6pm[col].var() for col in fri6pm.columns], axis=0)
 
 """
@@ -40,22 +40,21 @@ for hh in range(0,47,1):
     
 #change shape of data into a cube/tensor with dimensions day/hour/meter
 """
-#seperate date and time stored already in 'DayOfWeek' and 'HH'
-#need to reformat data already in columns into a tensor
-#dataframe is a 2-d data structure, not 3-d
-#can use a NumPy ndarray to create a tensor
-#axis 0 is level, axis 1 is row, axis 2 is column 
+#find the covariance from selected data set
+cov=np.zeros((365, 48))
 
-#convert data frame to numpy array
-lcl_array = df_lcl.to_numpy()
+#cycle through all days of the year
+for day in range(0, 365, 1):
+    #cycle through HH - (hour hour) to fill these
+    for hh in range(0,48,1):
+        #this freezes computer!!
+        #weekdays = df_lcl.loc[(df_lcl['DayOfWeek'] <= 5) & (df_lcl['HH'] == hh)]
+        
+        #uses predefined function to find covariance
+        #cov[day,hh]=np.cov([weekdays[col].mean() for col in weekdays.columns], axis = 0)
 
-#get column names
-column_names = df_lcl.columns
-
-#use reshape function 
-#lcl_tensor = lcl_array.reshape((group, rows, columns))
-
-
+"""
+PLOT GENERATION
 """
 #now use Matplotlib to show the mean load profile (with error bars to indicate HH variance)
 fig = plt.figure()
@@ -86,4 +85,3 @@ sns.violinplot("DayOfWeek", "N0000", data=df_lcl)
 
 fig4 = plt.figure()
 sns.violinplot("DayOfWeek", "N0000", data=np.log(df_lcl))#any thoughts?
-"""
