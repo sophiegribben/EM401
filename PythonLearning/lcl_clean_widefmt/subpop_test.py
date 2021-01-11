@@ -24,34 +24,33 @@ df_lcl['HH']=df_lcl.index.hour*2+(df_lcl.index.minute/30)
 mu=np.zeros(48)
 #create numpy array for variance
 sigma=np.zeros((48, 48))
-#cycle through HH - (hour hour) to fill these
-for hh in range(0,48,1):
-    #locates a subset of data for weekdays in march 
-    fri6pm=df_lcl.loc[(df_lcl['MonthOfYear'] == 3) & (df_lcl['DayOfWeek'] <= 5) & (df_lcl['HH'] == hh)]
-    
-    #uses predefined mean function from numpy
-    mu[hh]=np.mean([fri6pm[col].mean() for col in fri6pm.columns], axis=0)
-    
-    #uses predefined variance function from numpy
-    sigma[hh,hh]=np.var([fri6pm[col].var() for col in fri6pm.columns], axis=0)
+#create numpy array for covariance
+cov=np.zeros((7, 48))
+
+#playabout with the order of the loops and values
+#cycle through days
+for day in range(0,7,1):
+   
+    #cycle through HH - (hour hour) to fill these
+    for hh in range(0,48,1):
+        #extracts data for all days in march
+        fri6pm=df_lcl.loc[(df_lcl['MonthOfYear'] == 3) & (df_lcl['DayOfWeek'] == day) & (df_lcl['HH'] == hh)]
+
+        #uses predefined mean function from numpy
+        mu[hh]=np.mean([fri6pm[col].mean() for col in fri6pm.columns], axis=0)
+        
+        #uses predefined variance function from numpy
+        sigma[hh,hh]=np.var([fri6pm[col].var() for col in fri6pm.columns], axis=0)
+        
+        #uses predefined covariance function from numpy
+        cov[day,hh]=np.cov([fri6pm[col].var() for col in fri6pm.columns], bias=True)
 
 """
 #how to get intra-day covariance??
     
 #change shape of data into a cube/tensor with dimensions day/hour/meter
 """
-#find the covariance from selected data set
-cov=np.zeros((365, 48))
 
-#cycle through all days of the year
-for day in range(0, 365, 1):
-    #cycle through HH - (hour hour) to fill these
-    for hh in range(0,48,1):
-        #this freezes computer!!
-        #weekdays = df_lcl.loc[(df_lcl['DayOfWeek'] <= 5) & (df_lcl['HH'] == hh)]
-        
-        #uses predefined function to find covariance
-        #cov[day,hh]=np.cov([weekdays[col].mean() for col in weekdays.columns], axis = 0)
 
 """
 PLOT GENERATION
