@@ -24,32 +24,29 @@ df_lcl['HH']=df_lcl.index.hour*2+(df_lcl.index.minute/30)
 mu=np.zeros(48)
 #create numpy array for variance
 sigma=np.zeros((48, 48))
-#create numpy array for covariance
-cov=np.zeros((7, 48))
 
-#playabout with the order of the loops and values
-#cycle through days
-for day in range(0,7,1):
-   
-    #cycle through HH - (hour hour) to fill these
-    for hh in range(0,48,1):
-        #extracts data for all days in march
-        fri6pm=df_lcl.loc[(df_lcl['MonthOfYear'] == 3) & (df_lcl['DayOfWeek'] == day) & (df_lcl['HH'] == hh)]
 
-        #uses predefined mean function from numpy
-        mu[hh]=np.mean([fri6pm[col].mean() for col in fri6pm.columns], axis=0)
-        
-        #uses predefined variance function from numpy
-        sigma[hh,hh]=np.var([fri6pm[col].var() for col in fri6pm.columns], axis=0)
-        
-        #uses predefined covariance function from numpy
-        cov[day,hh]=np.cov([fri6pm[col].var() for col in fri6pm.columns], bias=True)
+#analyse the data set - mean, variance, covariance
+#play about with the order of the loops and values
 
-"""
-#how to get intra-day covariance??
+#cycle through HH - (hour hour) to fill these
+for hh in range(0,48,1):
     
-#change shape of data into a cube/tensor with dimensions day/hour/meter
+    fri6pm=df_lcl.loc[(df_lcl['MonthOfYear'] == 3) & (df_lcl['DayOfWeek'] == 5) & (df_lcl['HH'] == hh)]
+    
+    #uses predefined mean function from numpy
+    mu[hh]=np.mean([fri6pm[col].mean() for col in fri6pm.columns], axis=0)
+    
+    #uses predefined variance function from numpy
+    sigma[hh,hh]=np.var([fri6pm[col].var() for col in fri6pm.columns], axis=0)
+
+
 """
+covariance calculation
+
+"""
+
+#create matrix of data for 
 
 
 """
@@ -70,6 +67,7 @@ ax.plot(x,mu)
 plt.errorbar(x, mu, yerr=np.diag(sigma), fmt='.k')
 
 #how to sample from Gaussian distribution:
+#this currently uses variance instead of covariance
 sprofile = np.random.multivariate_normal(mu, sigma, 10)
 
 fig2 = plt.figure()
