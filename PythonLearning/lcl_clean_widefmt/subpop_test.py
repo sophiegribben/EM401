@@ -45,9 +45,23 @@ for hh in range(0,48,1):
 covariance calculation
 
 """
+#tensor - dimensions day, meter, hh
+tensor = np.zeros((365, 754, 48))
 
-#create matrix of data for 
+#cycle through HH - (hour hour) to fill these
+for hh in range(0, 48, 1):
+    #get the data for this half hour
+    data=df_lcl.loc[(df_lcl['HH'] == hh)]
+    #convert to numpy and insert into tensor
+    np_data = data.to_numpy()
+    tensor[0:, 0:, hh] = np_data
+    
 
+#collapse down by taking an average over all meters
+
+#find the covariance between days and HH (48x48 matrix)
+
+#use this to sample - we have a load profile synthesiser
 
 """
 PLOT GENERATION
