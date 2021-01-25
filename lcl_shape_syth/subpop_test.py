@@ -25,20 +25,13 @@ mu=np.zeros(48)
 #create numpy array for variance
 sigma=np.zeros((48, 48))
 
-
-#analyse the data set - mean, variance, covariance
-#play about with the order of the loops and values
-
-#cycle through HH - (hour hour) to fill these
+#find the mean for Fridays in March 
 for hh in range(0,48,1):
     
     fri6pm=df_lcl.loc[(df_lcl['MonthOfYear'] == 3) & (df_lcl['DayOfWeek'] == 5) & (df_lcl['HH'] == hh)]
     
     #uses predefined mean function from numpy
     mu[hh]=np.mean([fri6pm[col].mean() for col in fri6pm.columns], axis=0)
-    
-    #uses predefined variance function from numpy
-    sigma[hh,hh]=np.var([fri6pm[col].var() for col in fri6pm.columns], axis=0)
 
 
 """
@@ -52,16 +45,20 @@ tensor = np.zeros((365, 754, 48))
 for hh in range(0, 48, 1):
     #get the data for this half hour
     data=df_lcl.loc[(df_lcl['HH'] == hh)]
+    
     #convert to numpy and insert into tensor
-    np_data = data.to_numpy()
-    tensor[0:, 0:, hh] = np_data
+    tensor[0:, 0:, hh] = data.to_numpy()
     
 
 #collapse down by taking an average over all meters
+lcl_aver = np.average(tensor, axis=1)
 
+ 
 #find the covariance between days and HH (48x48 matrix)
+lcl_aver = np.transpose(lcl_aver)  
+sigma=np.cov(lcl_aver)
 
-#use this to sample - we have a load profile synthesiser
+
 
 """
 PLOT GENERATION
@@ -72,17 +69,18 @@ ax = plt.axes()
 
 plt.style.use('seaborn-whitegrid')
 
+#how to sample from Gaussian distribution:
+sprofile = np.random.multivariate_normal(mu, sigma, 10)
+
+
 #arange returns evenly spaced values within a given interval - an array
 #up to 48 in this case - a day
 x = np.arange(48)
 #plot the mean for a day
-ax.plot(x,mu)
+ax.plot(x, mu)
 #add errorbars
 plt.errorbar(x, mu, yerr=np.diag(sigma), fmt='.k')
 
-#how to sample from Gaussian distribution:
-#this currently uses variance instead of covariance
-sprofile = np.random.multivariate_normal(mu, sigma, 10)
 
 fig2 = plt.figure()
 ax2 = plt.axes()
@@ -95,4 +93,4 @@ sns.violinplot("DayOfWeek", "N0000", data=df_lcl)
 #see https://jakevdp.github.io/PythonDataScienceHandbook/04.14-visualization-with-seaborn.html
 
 fig4 = plt.figure()
-sns.violinplot("DayOfWeek", "N0000", data=np.log(df_lcl))#any thoughts?
+sns.violinplot("DayOfWeek", "N0000", data=np.log(df_lcl))
