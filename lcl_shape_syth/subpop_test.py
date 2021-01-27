@@ -3,6 +3,7 @@
 Created on Sun Nov  1 16:42:53 2020
 
 @author: ajp97161
+
 """
 import numpy as np
 import pandas as pd
@@ -25,10 +26,10 @@ mu=np.zeros(48)
 #create numpy array for variance
 sigma=np.zeros((48, 48))
 
-#find the mean for Fridays in March 
+#find the mean for Weekdays in March 
 for hh in range(0,48,1):
     
-    fri6pm=df_lcl.loc[(df_lcl['MonthOfYear'] == 3) & (df_lcl['DayOfWeek'] == 5) & (df_lcl['HH'] == hh)]
+    fri6pm=df_lcl.loc[(df_lcl['MonthOfYear'] == 3) & (df_lcl['DayOfWeek'] <= 5) & (df_lcl['HH'] == hh)]
     
     #uses predefined mean function from numpy
     mu[hh]=np.mean([fri6pm[col].mean() for col in fri6pm.columns], axis=0)
@@ -94,3 +95,7 @@ sns.violinplot("DayOfWeek", "N0000", data=df_lcl)
 
 fig4 = plt.figure()
 sns.violinplot("DayOfWeek", "N0000", data=np.log(df_lcl))
+
+#create a heatmap of the data
+fig4 = plt.figure()
+sns.heatmap(sigma)
