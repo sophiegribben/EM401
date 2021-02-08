@@ -3,62 +3,78 @@
 Created on Sun Nov  1 16:42:53 2020
 
 @author: ajp97161
-
+Edited: S. Gribben
 """
 import numpy as np
 import pandas as pd
 import os
 import matplotlib.pyplot as plt
-#statistical data vis library based on matplotlib
 import seaborn as sns
 
-os.getcwd()  # get current working directory
 
-# Read the downloaded data
+# get current working directory
+os.getcwd()  
+
+# Read the LCL data
 df_lcl = pd.read_csv("lcl_clean_widefmt.csv", header=0,index_col=0, parse_dates=True)
 
 df_lcl['DayOfWeek']=df_lcl.index.dayofweek
 df_lcl['MonthOfYear']=df_lcl.index.month
 df_lcl['HH']=df_lcl.index.hour*2+(df_lcl.index.minute/30)
 
-#create numpy array for mean
-mu=np.zeros(48)
-#create numpy array for variance
-sigma=np.zeros((48, 48))
-
-#find the mean for Weekdays in March 
-for hh in range(0,48,1):
-    
-    fri6pm=df_lcl.loc[(df_lcl['MonthOfYear'] == 3) & (df_lcl['DayOfWeek'] <= 5) & (df_lcl['HH'] == hh)]
-    
-    #uses predefined mean function from numpy
-    mu[hh]=np.mean([fri6pm[col].mean() for col in fri6pm.columns], axis=0)
-
+#read the profile class 1 data
+class1 = pd.read_csv("ProfileClass1.csv", header=0,index_col=0, parse_dates=False)
 
 """
-covariance calculation
+covariance calculation function
 
 """
-#tensor - dimensions day, meter, hh
-tensor = np.zeros((365, 754, 48))
+def covariance(day):
+    #create numpy array for mean
+    mu=np.zeros(48)
+    #create numpy array for variance
+    sigma=np.zeros((48, 48))
 
-#cycle through HH - (hour hour) to fill these
-for hh in range(0, 48, 1):
-    #get the data for this half hour
-    data=df_lcl.loc[(df_lcl['HH'] == hh)]
-    
-    #convert to numpy and insert into tensor
-    tensor[0:, 0:, hh] = data.to_numpy()
-    
+    if day == 4:
+        #tensor - dimensions day, meter, hh
+        tensor=np.zeros((261, 754, 48))
+    else: 
+        tensor=np.zeros((52, 754, 48))
 
-#collapse down by taking an average over all meters
-lcl_aver = np.average(tensor, axis=1)
-
+    for hh in range(0,48,1):
+        #extract data
+        if day == 4:
+            data=df_lcl.loc[(df_lcl['DayOfWeek'] <= day) & (df_lcl['HH'] == hh)]
+        else: 
+            data=df_lcl.loc[(df_lcl['DayOfWeek'] == day) & (df_lcl['HH'] == hh)]
  
-#find the covariance between days and HH (48x48 matrix)
-lcl_aver = np.transpose(lcl_aver)  
-sigma=np.cov(lcl_aver)
+        #uses predefined mean function from numpy
+        mu[hh]= np.mean([data[col].mean() for col in data.columns], axis=0)
+        
+        #convert to numpy and insert into tensor
+        tensor[0:, 0:, hh] = data.to_numpy()
+    
+    #collapse down by taking an average over all meters
+    lcl_aver = np.average(tensor, axis=1)
+    
+    #find the covariance between days and HH (48x48 matrix)
+    lcl_aver = np.transpose(lcl_aver)
+    sigma = np.cov(lcl_aver)
+    
+    #sample from Gaussian distribution:
+    sprofile = np.random.multivariate_normal(mu, sigma, 10)
+    
+    return mu, sigma, sprofile
 
+
+#select weekdays
+wd_mu, wd_sigma, wd_sprofile = covariance(4)
+
+#select saturdays
+sat_mu, sat_sigma, sat_sprofile = covariance(5)
+
+#select sundays
+sun_mu, sun_sigma, sun_sprofile = covariance(6)
 
 
 """
@@ -67,35 +83,29 @@ PLOT GENERATION
 #now use Matplotlib to show the mean load profile (with error bars to indicate HH variance)
 fig = plt.figure()
 ax = plt.axes()
-
 plt.style.use('seaborn-whitegrid')
-
-#how to sample from Gaussian distribution:
-sprofile = np.random.multivariate_normal(mu, sigma, 10)
 
 
 #arange returns evenly spaced values within a given interval - an array
 #up to 48 in this case - a day
 x = np.arange(48)
 #plot the mean for a day
-ax.plot(x, mu)
+ax.plot(x, wd_mu)
 #add errorbars
-plt.errorbar(x, mu, yerr=np.diag(sigma), fmt='.k')
+plt.errorbar(x, wd_mu, yerr=np.diag(wd_sigma), fmt='.k')
 
-
+#plot generated profile against profile class 1
 fig2 = plt.figure()
 ax2 = plt.axes()
+ax2.plot(wd_sprofile.T)
 
-ax2.plot(sprofile.T)#looks rubbish! need to check if its right
-#ax2.plot(np.mean(profile,axis=0))
 
-fig3 = plt.figure()
-sns.violinplot("DayOfWeek", "N0000", data=df_lcl)
-#see https://jakevdp.github.io/PythonDataScienceHandbook/04.14-visualization-with-seaborn.html
-
+#create a heatmap of the data for wd, sat, sun 
 fig4 = plt.figure()
-sns.violinplot("DayOfWeek", "N0000", data=np.log(df_lcl))
+sns.heatmap(wd_sigma)
 
-#create a heatmap of the data
-fig4 = plt.figure()
-sns.heatmap(sigma)
+fig5 = plt.figure()
+sns.heatmap(sat_sigma)
+
+fig6 = plt.figure()
+sns.heatmap(sun_sigma)
