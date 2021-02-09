@@ -26,10 +26,32 @@ df_lcl['HH']=df_lcl.index.hour*2+(df_lcl.index.minute/30)
 class1 = pd.read_csv("ProfileClass1.csv", header=0,index_col=0, parse_dates=False)
 
 """
-covariance calculation function
+mean of the elexon profiles
+inputs: day (weekday-0, sat-1 or sun-2)
+outputs: mean
 
 """
-def covariance(day):
+def class1_mean(day):
+    #create numpy array for mean
+    mu=np.zeros(48)
+    
+    for hh in range(0,48,1):
+        temp=class1.iloc[:, [day, day+3, day+6, day+9, day+12]]
+        data=temp.transpose()
+        
+        #Spitting out the same mean for each column - fix!
+        mu[hh]= np.mean([data[col].mean() for col in data.columns], axis=0)
+
+    return mu
+        
+
+"""
+synth profile
+inputs: day (weekday-4, sat-5 or sun-6)
+outputs: mean, covariance and 10 guassian profiles
+
+"""
+def synth_profile(day):
     #create numpy array for mean
     mu=np.zeros(48)
     #create numpy array for variance
@@ -68,14 +90,15 @@ def covariance(day):
 
 
 #select weekdays
-wd_mu, wd_sigma, wd_sprofile = covariance(4)
+wd_mu, wd_sigma, wd_sprofile = synth_profile(4)
 
 #select saturdays
-sat_mu, sat_sigma, sat_sprofile = covariance(5)
+sat_mu, sat_sigma, sat_sprofile = synth_profile(5)
 
 #select sundays
-sun_mu, sun_sigma, sun_sprofile = covariance(6)
+sun_mu, sun_sigma, sun_sprofile = synth_profile(6)
 
+mu_ave = class1_mean(0)
 
 """
 PLOT GENERATION
@@ -97,6 +120,8 @@ plt.errorbar(x, wd_mu, yerr=np.diag(wd_sigma), fmt='.k')
 #plot generated profile against profile class 1
 fig2 = plt.figure()
 ax2 = plt.axes()
+#plot the week
+ax2.plot(class1_mean(0), label= "Wd average")
 ax2.plot(wd_sprofile.T)
 
 
