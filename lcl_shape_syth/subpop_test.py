@@ -34,13 +34,13 @@ outputs: mean
 def class1_mean(day):
     #create numpy array for mean
     mu=np.zeros(48)
+    data=np.zeros((48,5))
     
     for hh in range(0,48,1):
-        temp=class1.iloc[:, [day, day+3, day+6, day+9, day+12]]
-        data=temp.transpose()
-        
+        class1_slice=class1.iloc[:, [day, day+3, day+6, day+9, day+12]]
+        data=class1_slice.to_numpy()
         #Spitting out the same mean for each column - fix!
-        mu[hh]= np.mean([data[col].mean() for col in data.columns], axis=0)
+        mu[hh]= np.mean(data[hh, 0:])
 
     return mu
         
@@ -123,7 +123,7 @@ ax2 = plt.axes()
 #plot the week
 ax2.plot(class1_mean(0), label= "Wd average")
 ax2.plot(wd_sprofile.T)
-
+ax2.legend()
 
 #create a heatmap of the data for wd, sat, sun 
 fig4 = plt.figure()
