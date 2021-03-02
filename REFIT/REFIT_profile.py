@@ -7,13 +7,37 @@ Created on Mon Feb 15 14:50:28 2021
 """
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
+import datetime
 #import glob
 import os
 
+# get appliance start times
+def app_starttimes(app_num):
+    app_num = str(app_num)
+    
+    df_on_times = df[df['Appliance'+ app_num] > 0]
+    
+    #extract into numpy
+    on_times = df_on_times[['Unix', 'Appliance'+ app_num]].to_numpy()
+    
+    # find the start and end values
+    #convert from unix
+    datetime_time = datetime.datetime.fromtimestamp(on_times[0, 0])
+    #initialise the array
+    start_time = np.array([datetime_time])
+    
+    for i in range(1, len(on_times)-1, 1):
+        if on_times[i+1, 1] - on_times[i, 1] > 1:
+            #convert from unix
+            datetime_time = datetime.datetime.fromtimestamp(on_times[i+1, 0])
+            #add to the array
+            start_time = np.append(start_time, datetime_time)
+    
+    return start_time
+
 # get current working directory
 path = os.getcwd()
-
 
 """
 # Read each households data
@@ -25,30 +49,10 @@ for filename in all_files:
     df_dict[filename] = df
 """
 
-# get appliance start times
-#how to capture multiple start times?
-def app_starttimes(app_num):
-    house = str(app_num)
-    
-    on_times = df[df['Appliance'+ house] > 0]
-    
-    #extract into numpy
-    np_on_times = on_times[['Unix', 'Appliance'+ house]].to_numpy()
-    
-    
-    """
-    # find the start values
-    for i in range(0, len(np_on_times), 1)
-        if np_on_times[i+1]-np_on_times[i] > 1
-            start_time = 
-            
-    """
-    
-    return np_on_times
-
 #read in the house data
 house = str(1)
 df = pd.read_csv(path + "/Processed_Data_CSV/House_"+ house +".csv", header=0, index_col="Time")
 
-app1_on = app_starttimes(house)
+#get the appliance data for 1 app. in 1 house
+app1_on = app_starttimes(1)
 
