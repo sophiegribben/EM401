@@ -84,25 +84,62 @@ def synth_profile(day):
     sigma = np.cov(lcl_aver)
     
     #sample from Gaussian distribution:
-    sprofile = np.random.multivariate_normal(mu, sigma, 10)
+    sprofile = np.random.multivariate_normal(mu, sigma, 300)
     
     return mu, sigma, sprofile
 
+"""
+generate week
+generates a weeks worth of data with no specific season attached
+inputs: none
+outputs: A numpy array of data in the correct format for the dss model 
+"""
 
-#select weekdays
-wd_mu, wd_sigma, wd_sprofile = synth_profile(4)
+def generate_week():
+    sprofile = np.zeros((300, 336))
+    #select weekdays -  append for each day
+    for i in range(0, 193, 48):
+        mu, sigma, temp_sprofile = synth_profile(4)
+        sprofile[0:, i:(i+48)]=temp_sprofile
+    
+    #select saturdays
 
-#select saturdays
-sat_mu, sat_sigma, sat_sprofile = synth_profile(5)
+    sat_mu, sat_sigma, sat_sprofile = synth_profile(5)
+    sprofile[0:, 240:288]=sat_sprofile
 
-#select sundays
-sun_mu, sun_sigma, sun_sprofile = synth_profile(6)
+    
+    #select sundays
+    sun_mu, sun_sigma, sun_sprofile = synth_profile(6)
+    sprofile[0:, 288:336]=sat_sprofile
+    
+    #transverse for the 
+    return sprofile.T
 
 mu_ave = class1_mean(0)
 
 """
-PLOT GENERATION
+generate seasonal profiles
 """
+def seasonal_profiles():
+    #define the seasons from elexons definitions
+    #spring = (df_lcl['date_time_utc'] >= "2013-03-28 00:00:00") & (df_lcl['date_time_utc'] < "2013-05-15 00:00:00") 
+    #summer =(df_lcl['date_time_utc'] >= "2013-05-28 00:00:00") & (df_lcl['date_time_utc'] < "2013-05-28 00:00:00")
+    #h_summer = (df_lcl['date_time_utc'] >= "2013-05-28 00:00:00") & (df_lcl['date_time_utc'] < "2013-05-28 00:00:00")
+    #autumn = (df_lcl['date_time_utc'] >= "2013-05-28 00:00:00") & (df_lcl['date_time_utc'] < "2013-05-28 00:00:00")
+    #winter = (df_lcl['date_time_utc'] >= "2013-05-28 00:00:00") & (df_lcl['date_time_utc'] < "2013-05-28 00:00:00")
+    
+    
+    
+"""
+Save the generated profiles in csv format
+"""
+week_sprofile = generate_week()
+np.savetxt("lcl_load.csv", week_sprofile, delimiter=",")
+
+
+"""
+PLOT GENERATION
+
 #now use Matplotlib to show the mean load profile (with error bars to indicate HH variance)
 fig = plt.figure()
 ax = plt.axes()
@@ -134,3 +171,4 @@ sns.heatmap(sat_sigma)
 
 fig6 = plt.figure()
 sns.heatmap(sun_sigma)
+"""
