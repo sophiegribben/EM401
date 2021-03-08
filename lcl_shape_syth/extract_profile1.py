@@ -1,20 +1,52 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Feb  3 11:00:46 2021
+Created on Sun Mar  7 13:59:39 2021
 
-@author: S. Gribben
+Working with the ELEXON data for profile class 1
+@author: Sam
 """
 import numpy as np
 import pandas as pd
 import os
-import matplotlib.pyplot as plt
 
-os.getcwd()  # get current working directory
+os.getcwd()
+
+#read the profile class 1 data
 class1 = pd.read_csv("ProfileClass1.csv", header=0,index_col=0, parse_dates=False)
+    
+"""
+mean of the elexon profiles
+inputs: day (weekday-4, sat-5 or sun-6)
+outputs: mean
 
-#extract specific profiles
+"""
+def class1_mean(day):
+    day = day - 4
+    #create numpy array for mean
+    mu=np.zeros(48)
+    data=np.zeros((48,5))
+    
+    for hh in range(0,48,1):
+        class1_slice=class1.iloc[:, [day, day+3, day+6, day+9, day+12]]
+        data=class1_slice.to_numpy()
+        #Spitting out the same mean for each column - fix!
+        mu[hh]= np.mean(data[hh, 0:])
 
-fig2 = plt.figure()
-ax2 = plt.axes()
+    return mu
 
-ax2.plot(class1)#looks rubbish! need to check if its right
+"""
+extract ELEXON data
+inputs: day, season
+outputs: the specific profile
+"""
+def class1_profile(day, season):
+    #turn day into text
+    if day == 4:
+        day_str = "Wd"
+    elif day == 5:
+        day_str = "Sat"
+    elif day == 6:
+        day_str = "Sun"
+    
+    profile = class1[season + " " + day_str]
+    return profile

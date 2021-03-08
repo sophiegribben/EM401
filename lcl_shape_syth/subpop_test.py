@@ -25,6 +25,16 @@ df_lcl['HH']=df_lcl.index.hour*2+(df_lcl.index.minute/30)
 #read the profile class 1 data
 class1 = pd.read_csv("ProfileClass1.csv", header=0,index_col=0, parse_dates=False)
 
+#split up data frame by seasons
+#define the seasons from elexons definitions
+spring = df_lcl['2013-03-28 00:00:00':'2013-05-14 23:30:00']
+summer = df_lcl['2013-05-15 00:00:00':'2013-07-23 23:30:00']
+h_summer = df_lcl['2013-07-24 00:00:00':'2013-09-05 23:30:00']
+autumn = df_lcl['2013-09-06 00:00:00':'2013-10-30 23:30:00']
+winter1 = df_lcl['2013-10-31 00:00:00':'2013-12-31 23:30:00']
+winter2 = df_lcl['2013-01-01 00:00:00':'2013-03-27 23:30:00']
+winter = pd.concat([winter1, winter2], axis=0)
+
 """
 mean of the elexon profiles
 inputs: day (weekday-0, sat-1 or sun-2)
@@ -51,7 +61,7 @@ inputs: day (weekday-4, sat-5 or sun-6)
 outputs: mean, covariance and 10 guassian profiles
 
 """
-def synth_profile(day):
+def synth_profile(day, df_season):
     #create numpy array for mean
     mu=np.zeros(48)
     #create numpy array for variance
@@ -59,6 +69,7 @@ def synth_profile(day):
 
     if day == 4:
         #tensor - dimensions day, meter, hh
+        #the number of days depends on the season
         tensor=np.zeros((261, 754, 48))
     else: 
         tensor=np.zeros((52, 754, 48))
@@ -66,9 +77,9 @@ def synth_profile(day):
     for hh in range(0,48,1):
         #extract data
         if day == 4:
-            data=df_lcl.loc[(df_lcl['DayOfWeek'] <= day) & (df_lcl['HH'] == hh)]
+            data=df_season.loc[(df_season['DayOfWeek'] <= day) & (df_season['HH'] == hh)]
         else: 
-            data=df_lcl.loc[(df_lcl['DayOfWeek'] == day) & (df_lcl['HH'] == hh)]
+            data=df_season.loc[(df_season['DayOfWeek'] == day) & (df_season['HH'] == hh)]
  
         #uses predefined mean function from numpy
         mu[hh]= np.mean([data[col].mean() for col in data.columns], axis=0)
@@ -99,17 +110,17 @@ def generate_week():
     sprofile = np.zeros((300, 336))
     #select weekdays -  append for each day
     for i in range(0, 193, 48):
-        mu, sigma, temp_sprofile = synth_profile(4)
+        mu, sigma, temp_sprofile = synth_profile(4, spring)
         sprofile[0:, i:(i+48)]=temp_sprofile
     
     #select saturdays
 
-    sat_mu, sat_sigma, sat_sprofile = synth_profile(5)
+    sat_mu, sat_sigma, sat_sprofile = synth_profile(5, spring)
     sprofile[0:, 240:288]=sat_sprofile
 
     
     #select sundays
-    sun_mu, sun_sigma, sun_sprofile = synth_profile(6)
+    sun_mu, sun_sigma, sun_sprofile = synth_profile(6, spring)
     sprofile[0:, 288:336]=sat_sprofile
     
     #transverse for the 
@@ -117,24 +128,14 @@ def generate_week():
 
 mu_ave = class1_mean(0)
 
-"""
-generate seasonal profiles
-"""
-def seasonal_profiles():
-    #define the seasons from elexons definitions
-    #spring = (df_lcl['date_time_utc'] >= "2013-03-28 00:00:00") & (df_lcl['date_time_utc'] < "2013-05-15 00:00:00") 
-    #summer =(df_lcl['date_time_utc'] >= "2013-05-28 00:00:00") & (df_lcl['date_time_utc'] < "2013-05-28 00:00:00")
-    #h_summer = (df_lcl['date_time_utc'] >= "2013-05-28 00:00:00") & (df_lcl['date_time_utc'] < "2013-05-28 00:00:00")
-    #autumn = (df_lcl['date_time_utc'] >= "2013-05-28 00:00:00") & (df_lcl['date_time_utc'] < "2013-05-28 00:00:00")
-    #winter = (df_lcl['date_time_utc'] >= "2013-05-28 00:00:00") & (df_lcl['date_time_utc'] < "2013-05-28 00:00:00")
-    
-    
+mu1, sigma1, sprofile1 = synth_profile(5, spring)
+
     
 """
 Save the generated profiles in csv format
-"""
 week_sprofile = generate_week()
 np.savetxt("lcl_load.csv", week_sprofile, delimiter=",")
+"""
 
 
 """
