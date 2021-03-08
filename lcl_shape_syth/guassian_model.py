@@ -57,7 +57,7 @@ def synth_profile(day, season):
         df_season = df_lcl['2013-09-02 00:00:00':'2013-10-27 23:30:00']
         wd_num = 40
         sat_num = 8
-        sun_num = 7
+        sun_num = 8
     elif season == "Wtr":
         winter1 = df_lcl['2013-10-28 00:00:00':'2013-12-31 23:30:00']
         winter2 = df_lcl['2013-01-01 00:00:00':'2013-03-30 23:30:00']
@@ -94,7 +94,7 @@ def synth_profile(day, season):
     lcl_aver = np.average(tensor, axis=1)
     
     #find the covariance between days and HH (48x48 matrix)
-    lcl_aver = np.transpose(lcl_aver)
+    lcl_aver = lcl_aver.T
     sigma = np.cov(lcl_aver)
     
     #sample from Gaussian distribution:
@@ -113,23 +113,22 @@ def generate_week(season):
     #set up for 300 meters, 336 hours (7 days)
     sprofile = np.zeros((300, 336))
     #select weekdays -  append for each day
-    for i in range(0, 193, 48):
+    for i in range(0, 240, 48):
         wd_mu, wd_sigma, temp_sprofile = synth_profile(4, season)
-        sprofile[0:, i:(i+48)]=temp_sprofile
+        sprofile[0:, i:(i+48)] = temp_sprofile
     
     #select saturdays
     sat_mu, sat_sigma, sat_sprofile = synth_profile(5, season)
-    sprofile[0:, 240:288]=sat_sprofile
+    sprofile[0:, 240:288]=  sat_sprofile
 
     
     #select sundays
     sun_mu, sun_sigma, sun_sprofile = synth_profile(6, season)
-    sprofile[0:, 288:336]=sat_sprofile
+    sprofile[0:, 288:336] = sun_sprofile
     
     #returns the profile with (meters, hours)
     return sprofile
 
-week = generate_week("Wtr")
 
 """
 generate year
@@ -143,16 +142,47 @@ def generate_year():
     year = np.zeros((300, 17808))
 
     #winter (13 weeks)
-    for i in range(0, 4369, 336):
+    low = 0 
+    high = 13 * 336
+    for i in range(low, high, 336):
         year[0:, i:(i+336)] = generate_week("Wtr")
     
     #spring (6 weeks)
-    for i in range(4368, 6384, 336):
+    low = high
+    high = high + (6 * 336)
+    for i in range(low, high, 336):
         year[0:, i:(i+336)] = generate_week("Spr")
+        
+    #summer (10 weeks)
+    low = high
+    high = high + (10 * 336)
+    for i in range(low, high, 336):
+        year[0:, i:(i+336)] = generate_week("Smr")
+    
+    #high summer (6 weeks)
+    low = high
+    high = high + (6 * 336)
+    for i in range(low, high, 336):
+        year[0:, i:(i+336)] = generate_week("Hsr")
+        
+    #autumn (8 weeks)
+    low = high
+    high = high + (8 * 336)
+    for i in range(low, high, 336):
+        year[0:, i:(i+336)] = generate_week("Aut")
+        
+    #winter (10 weeks)
+    low = high
+    high = high + (10 * 336)
+    for i in range(low, high, 336):
+        year[0:, i:(i+336)] = generate_week("Wtr")
         
     #format into (hours, meters) for the dss model
     year_dss = year.T    
-        
+    
+    #print into a csv file  
+    np.savetxt("guassian_load.csv", year_dss, delimiter=",")
+    
     return year_dss   
 
-test = generate_year()
+run = generate_year()
