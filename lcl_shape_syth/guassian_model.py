@@ -23,14 +23,15 @@ df_lcl['HH']=df_lcl.index.hour*2+(df_lcl.index.minute/30)
 
     
 """
-synth profile
-generates 300 profiles for a specific day
+generate day
+generates specifed number of profiles for a specific day
 inputs: day (weekday-4, sat-5 or sun-6), 
         season (spring-Spr, summer-Smr, high summer-Hsr, autumn-Aut, winter-Wtr)
-outputs: mean, covariance and 300 guassian profiles
+        num_profiles (how many households to generate)
+outputs: numpy array of the produced guassian profiles (meter, hour)
 
 """
-def synth_profile(day, season):
+def generate_day(day, season, num_profiles):
     #create numpy array for mean
     mu=np.zeros(48)
     #create numpy array for variance
@@ -98,84 +99,86 @@ def synth_profile(day, season):
     sigma = np.cov(lcl_aver)
     
     #sample from Gaussian distribution:
-    sprofile = np.random.multivariate_normal(mu, sigma, 300)
+    sprofile = np.random.multivariate_normal(mu, sigma, num_profiles)
     
-    return mu, sigma, sprofile
+    return sprofile
 
 """
 generate week
 generates a weeks worth of data
-inputs: the season
-outputs: A numpy array of data in the correct format for the dss model 
+inputs: the season, number of profiles to produce
+outputs: A numpy array of data in the form (meters, hours)
 """
 
-def generate_week(season):
-    #set up for 300 meters, 336 hours (7 days)
-    sprofile = np.zeros((300, 336))
+def generate_week(season, num_profiles):
+    #set up for specified meters, 336 hours (7 days)
+    sprofile = np.zeros((num_profiles, 336))
     #select weekdays -  append for each day
     for i in range(0, 240, 48):
-        wd_mu, wd_sigma, temp_sprofile = synth_profile(4, season)
-        sprofile[0:, i:(i+48)] = temp_sprofile
+        sprofile[0:, i:(i+48)] = generate_day(4, season, num_profiles)
     
     #select saturdays
-    sat_mu, sat_sigma, sat_sprofile = synth_profile(5, season)
-    sprofile[0:, 240:288]=  sat_sprofile
+    sprofile[0:, 240:288] = generate_day(5, season, num_profiles)
 
-    
     #select sundays
-    sun_mu, sun_sigma, sun_sprofile = synth_profile(6, season)
-    sprofile[0:, 288:336] = sun_sprofile
-    
+    sprofile[0:, 288:336] = generate_day(6, season, num_profiles)
+
     #returns the profile with (meters, hours)
     return sprofile
 
 
 """
 generate year
-generates a years worth of data starting on a monday
-inputs: none
-outputs: csv file for 300 meters for 1 year and 6 days
+generates a years worth of data starting on a Monday
+inputs: number of profiles to produce
+outputs: csv file for 300 meters for 1 year
+         array of results in the form (hours, meters)
 
 """
-def generate_year():
-    #set up array for a years (53 weeks) worth of profiles
-    year = np.zeros((300, 17808))
+def generate_year(num_profiles):
+    #set up array for a years (52 weeks and 1 day) worth of profiles
+    year = np.zeros((num_profiles, 17520))
 
     #winter (13 weeks)
     low = 0 
     high = 13 * 336
     for i in range(low, high, 336):
-        year[0:, i:(i+336)] = generate_week("Wtr")
+        year[0:, i:(i+336)] = generate_week("Wtr", num_profiles)
     
     #spring (6 weeks)
     low = high
     high = high + (6 * 336)
     for i in range(low, high, 336):
-        year[0:, i:(i+336)] = generate_week("Spr")
+        year[0:, i:(i+336)] = generate_week("Spr", num_profiles)
         
     #summer (10 weeks)
     low = high
     high = high + (10 * 336)
     for i in range(low, high, 336):
-        year[0:, i:(i+336)] = generate_week("Smr")
+        year[0:, i:(i+336)] = generate_week("Smr", num_profiles)
     
     #high summer (6 weeks)
     low = high
     high = high + (6 * 336)
     for i in range(low, high, 336):
-        year[0:, i:(i+336)] = generate_week("Hsr")
+        year[0:, i:(i+336)] = generate_week("Hsr", num_profiles)
         
     #autumn (8 weeks)
     low = high
     high = high + (8 * 336)
     for i in range(low, high, 336):
-        year[0:, i:(i+336)] = generate_week("Aut")
+        year[0:, i:(i+336)] = generate_week("Aut", num_profiles)
         
-    #winter (10 weeks)
+    #winter (9 weeks + 1 day)
     low = high
-    high = high + (10 * 336)
+    high = high + (9 * 336)
     for i in range(low, high, 336):
-        year[0:, i:(i+336)] = generate_week("Wtr")
+        year[0:, i:(i+336)] = generate_week("Wtr", num_profiles)
+    
+    #generate a winter monday as the last day
+    low = high
+    high = high + 48
+    year[0:,low:high] = generate_day(4, "Wtr", num_profiles)
         
     #format into (hours, meters) for the dss model
     year_dss = year.T    
@@ -185,4 +188,3 @@ def generate_year():
     
     return year_dss   
 
-run = generate_year()

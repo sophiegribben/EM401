@@ -3,7 +3,7 @@
 Created on Sun Mar  7 13:59:39 2021
 
 Working with the ELEXON data for profile class 1
-@author: Sam
+@author: S. Gribben
 """
 import numpy as np
 import pandas as pd
@@ -50,3 +50,86 @@ def class1_profile(day, season):
     
     profile = class1[season + " " + day_str]
     return profile
+
+
+def generate_week(season):
+    #set up for 300 meters, 336 hours (7 days)
+    sprofile = np.zeros((1, 336))
+    
+    #select weekdays -  append for each day
+    for i in range(0, 240, 48):
+        sprofile[0:, i:(i+48)] = class1_profile(4, season)
+        
+    #select saturdays
+    sprofile[0:, 240:288]=  class1_profile(5, season)
+    
+    #select sundays
+    sprofile[0:, 288:336] = class1_profile(6, season)
+    
+    #returns the profile with (meters, hours)
+    return sprofile
+
+"""
+generate year
+generates a years worth of data starting on a Monday
+inputs: none
+outputs: csv file for 300 meters for 1 year
+
+"""
+def generate_year():
+    #set up array for a years (52 weeks and 1 day) worth of profiles
+    year = np.zeros((1, 17520))
+
+    #winter (13 weeks)
+    low = 0 
+    high = 13 * 336
+    for i in range(low, high, 336):
+        year[0:, i:(i+336)] = generate_week("Wtr")
+    
+    #spring (6 weeks)
+    low = high
+    high = high + (6 * 336)
+    for i in range(low, high, 336):
+        year[0:, i:(i+336)] = generate_week("Spr")
+        
+    #summer (10 weeks)
+    low = high
+    high = high + (10 * 336)
+    for i in range(low, high, 336):
+        year[0:, i:(i+336)] = generate_week("Smr")
+    
+    #high summer (6 weeks)
+    low = high
+    high = high + (6 * 336)
+    for i in range(low, high, 336):
+        year[0:, i:(i+336)] = generate_week("Hsr")
+        
+    #autumn (8 weeks)
+    low = high
+    high = high + (8 * 336)
+    for i in range(low, high, 336):
+        year[0:, i:(i+336)] = generate_week("Aut")
+        
+    #winter (9 weeks + 1 day)
+    low = high
+    high = high + (9 * 336)
+    for i in range(low, high, 336):
+        year[0:, i:(i+336)] = generate_week("Wtr")
+    
+    #generate a winter monday as the last day
+    low = high
+    high = high + 48
+    year[0:,low:high] = class1_profile(4, "Wtr")
+        
+    #format into (hours, meters) for the dss model
+    #this is currently only for 1 meter!!
+    year = np.repeat(year, 300, axis = 0)
+    year_dss = year.T
+
+    
+    #print into a csv file  
+    np.savetxt("elexon_load.csv", year_dss, delimiter=",")
+    
+    return year_dss  
+
+elexon_load = generate_year()
