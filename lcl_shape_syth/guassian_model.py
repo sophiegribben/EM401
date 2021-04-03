@@ -184,7 +184,7 @@ def generate_year(num_profiles):
     year_dss = year.T    
     
     #print into a csv file  
-    np.savetxt("guassian_load.csv", year_dss, delimiter=",")
+    np.savetxt("guassian_load_" + str(num_profiles) +"profiles.csv", year_dss, delimiter=",")
     
     return year_dss   
 

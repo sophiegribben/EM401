@@ -6,6 +6,6 @@ Created on Fri Mar 26 15:19:45 2021
 """
 import guassian_model
 
-numProfiles = 300
 
+numProfiles = 50
 run = guassian_model.generate_year(numProfiles)

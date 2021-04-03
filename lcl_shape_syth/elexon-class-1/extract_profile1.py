@@ -53,7 +53,7 @@ def class1_profile(day, season):
 
 
 def generate_week(season):
-    #set up for 300 meters, 336 hours (7 days)
+    #set up for 336 hours (7 days)
     sprofile = np.zeros((1, 336))
     
     #select weekdays -  append for each day
